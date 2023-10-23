@@ -9,5 +9,5 @@ setup(
         "data-diff==0.9.7",
         "duckdb==0.9.1"
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest"]},
+    extras_require={"dev": ["dagster-webserver==1.5.4", "pytest==7.4.2"]},
 )
