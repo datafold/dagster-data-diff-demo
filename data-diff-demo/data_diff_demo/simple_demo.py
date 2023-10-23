@@ -90,7 +90,7 @@ def data_diff_check() -> AssetCheckResult:
         "filepath": DESTINATION_DATABASE_PATH
     }, "main.events")
 
-    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], update_column="date"), columns=["diff_type", "rows_diff"])
+    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "rows_diff"])
 
     total_diffs_count = len(results)
 
@@ -99,8 +99,8 @@ def data_diff_check() -> AssetCheckResult:
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs": MetadataValue.int(total_diffs_count),
-            "rows_exclusive_to_source": MetadataValue.int(len(results[results["diff_type"] == "-"])),
-            "rows_exclusive_to_target": MetadataValue.int(len(results[results["diff_type"] == "+"])),
+            "source_row_diff": MetadataValue.int(len(results[results["diff_type"] == "-"])),
+            "target_row_diff": MetadataValue.int(len(results[results["diff_type"] == "+"])),
             "preview": MetadataValue.md(results.head(100).to_markdown())
         }
     )
