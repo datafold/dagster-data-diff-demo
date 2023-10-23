@@ -17,5 +17,11 @@ source venv/bin/activate
 
 ```bash
 # setup dagster
+cd data-diff-demo
 
+# start dagster development server
+dagster dev
 ```
+
+TODO: add GIF on materializing all assets and clicking through UI
+

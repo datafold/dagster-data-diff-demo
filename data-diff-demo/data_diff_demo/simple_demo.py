@@ -1,5 +1,7 @@
 from dagster import asset, asset_check, Definitions, AssetCheckResult, MetadataValue, AssetCheckSeverity
 from data_diff import connect_to_table, diff_tables
+import warnings
+warnings.simplefilter("ignore") # TODO: remove this to see all experimental warnings
 from random import randint
 
 import duckdb
@@ -87,16 +89,16 @@ def data_diff_check() -> AssetCheckResult:
         "filepath": DESTINATION_DATABASE_PATH
     }, "main.events")
 
-    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table), columns=["diff_type", "id"])
+    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], update_column="date"), columns=["diff_type", "rows_diff"])
 
     yield AssetCheckResult(
         passed=len(results) == 0,
         severity=AssetCheckSeverity.WARN,
         metadata={
             "total_diffs": MetadataValue.int(len(results)),
-            "records_missing": MetadataValue.int(len(results[results["diff_type"] == "-"])),
-            "records_extra": MetadataValue.int(len(results[results["diff_type"] == "+"])),
-            "preview": MetadataValue.md(results.head(25).to_markdown())
+            "rows_exclusive_to_source": MetadataValue.int(len(results[results["diff_type"] == "-"])),
+            "rows_exclusive_to_target": MetadataValue.int(len(results[results["diff_type"] == "+"])),
+            "preview": MetadataValue.md(results.head(100).to_markdown())
         }
     )
 
