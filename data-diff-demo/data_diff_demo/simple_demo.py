@@ -58,7 +58,8 @@ def replicated_events():
             union all
     """
 
-    noise_size = randint(EVENT_COUNT, EVENT_COUNT * 1.5)
+    # noise_size = randint(EVENT_COUNT, EVENT_COUNT * 1.5)
+    noise_size = randint(5, 100)
 
     for i in range(noise_size):
         load_into_destination_query += f" select {i} as id, current_date + {i} as date"
@@ -91,11 +92,13 @@ def data_diff_check() -> AssetCheckResult:
 
     results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], update_column="date"), columns=["diff_type", "rows_diff"])
 
+    total_diffs_count = len(results)
+
     yield AssetCheckResult(
-        passed=len(results) == 0,
-        severity=AssetCheckSeverity.WARN,
+        passed=total_diffs_count <= 50,
+        severity=AssetCheckSeverity.ERROR,
         metadata={
-            "total_diffs": MetadataValue.int(len(results)),
+            "total_diffs": MetadataValue.int(total_diffs_count),
             "rows_exclusive_to_source": MetadataValue.int(len(results[results["diff_type"] == "-"])),
             "rows_exclusive_to_target": MetadataValue.int(len(results[results["diff_type"] == "+"])),
             "preview": MetadataValue.md(results.head(100).to_markdown())
