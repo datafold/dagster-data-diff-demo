@@ -1,4 +1,4 @@
-from dagster import asset, asset_check, Definitions, AssetCheckResult, MetadataValue
+from dagster import asset, asset_check, Definitions, AssetCheckResult, MetadataValue, AssetCheckSeverity
 from data_diff import connect_to_table, diff_tables
 from random import randint
 
@@ -89,8 +89,9 @@ def data_diff_check() -> AssetCheckResult:
 
     results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table), columns=["diff_type", "id"])
 
-    return AssetCheckResult(
-        success=len(results) == 0,
+    yield AssetCheckResult(
+        passed=len(results) == 0,
+        severity=AssetCheckSeverity.WARN,
         metadata={
             "total_diffs": MetadataValue.int(len(results)),
             "records_missing": MetadataValue.int(len(results[results["diff_type"] == "-"])),
