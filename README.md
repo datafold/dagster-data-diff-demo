@@ -1,7 +1,7 @@
 # dagster-data-diff-demo
 Dagster + Datafold: Better Together
 
-This is a demo git repo for the Dagster + data-diff integration. It's goal is to give you clear examples of how to use Dagster's asset checks to solve for replication problems in your data pipelines.
+This is a demo project for the Dagster + data-diff integration. Its goal is to give you clear examples of how to use Dagster's asset checks to solve for replication problems in your data pipelines.
 
 ## Setup
 
