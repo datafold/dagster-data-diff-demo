@@ -6,19 +6,16 @@ This is a demo git repo for the Dagster + data-diff integration. It's goal is to
 ## Setup
 
 ```bash
-
 # setup python dependencies
+cd data-diff-demo
 python -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -e ".[dev]"
 source venv/bin/activate
 ```
 
 ```bash
-# setup dagster
-cd data-diff-demo
-
 # start dagster development server
 dagster dev
 ```

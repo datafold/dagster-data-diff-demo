@@ -7,7 +7,8 @@ setup(
         "dagster==1.5.4",
         "dagster-cloud==1.5.4",
         "data-diff==0.9.7",
-        "duckdb==0.9.1"
+        "duckdb==0.9.1",
+        "pandas==2.1.1"
     ],
     extras_require={"dev": ["dagster-webserver==1.5.4", "pytest==7.4.2"]},
 )

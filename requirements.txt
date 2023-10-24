@@ -1,4 +1,0 @@
-# data-diff==0.9.7
-dagster==1.5.4
-# dagster-webserver==1.5.4
-# duckdb==0.9.1
