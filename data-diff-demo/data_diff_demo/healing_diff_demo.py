@@ -118,12 +118,12 @@ def data_diff_healing_check() -> AssetCheckResult:
         passed=total_healed_diffs_count <= 5,
         severity=AssetCheckSeverity.ERROR,
         metadata={
-            "total_diffs": MetadataValue.int(total_healed_diffs_count),
+            "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
             "source_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "-"])),
             "target_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "+"])),
-            "preview_diffs": MetadataValue.md(results.head(100).to_markdown()),
+            "preview_all_diffs": MetadataValue.md(results.head(100).to_markdown()),
             "preview_diff_overwrites": MetadataValue.md(source_row_diffs.head(100).to_markdown()),
-            "preview_healed_diff_results": MetadataValue.md(healed_diff_results.head(100).to_markdown())
+            "preview_diffs_remaining": MetadataValue.md(healed_diff_results.head(100).to_markdown())
         }
     )
 
