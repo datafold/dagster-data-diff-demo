@@ -20,10 +20,10 @@ def source_events():
     for i in range(EVENT_COUNT):
         query += f" select {i} as id, current_date + {i} as date union all "
     
-    noise_size = randint(5, 100)
+    noise_size = randint(1, 5)
 
     for i in range(noise_size):
-        query += f" select -{i} as id, current_date - {i} as date"
+        query += f" select - {i} as id, current_date - {i} as date"
         if i < noise_size - 1:
             query += " union all "
 
@@ -54,22 +54,21 @@ def replicated_events():
     load_into_destination_query = f"""
         create or replace table events as (
             select * from '{AUDIT_STORAGE_PATH}'
-            where id >= 0
-            union all
+            where id >= 0);
     """
 
-    # noise_size = randint(EVENT_COUNT, EVENT_COUNT * 1.5)
-    noise_size = randint(5, 100)
+    dest_conn.query(load_into_destination_query)
+
+    noise_size = randint(5, 15)
 
     for i in range(noise_size):
-        load_into_destination_query += f" select {i} as id, current_date + {i} as date"
-        if i < noise_size - 1:
-            load_into_destination_query += " union all "
+        update_rows_query = f"""
+        UPDATE events
+                SET date = current_date - {i}
+                WHERE id = {i};
+        """
+        dest_conn.query(update_rows_query)
 
-    load_into_destination_query += ");"
-
-    dest_conn.query(load_into_destination_query)
-    
 
 @asset_check(
     name="data_diff_check",
@@ -90,7 +89,7 @@ def data_diff_check() -> AssetCheckResult:
         "filepath": DESTINATION_DATABASE_PATH
     }, "main.events")
 
-    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "rows_diff"])
+    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "row_diffs"])
 
     total_diffs_count = len(results)
 
@@ -99,8 +98,8 @@ def data_diff_check() -> AssetCheckResult:
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs": MetadataValue.int(total_diffs_count),
-            "source_row_diff": MetadataValue.int(len(results[results["diff_type"] == "-"])),
-            "target_row_diff": MetadataValue.int(len(results[results["diff_type"] == "+"])),
+            "source_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "-"])),
+            "target_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "+"])),
             "preview": MetadataValue.md(results.head(100).to_markdown())
         }
     )
