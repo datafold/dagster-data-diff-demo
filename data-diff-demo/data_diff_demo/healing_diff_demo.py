@@ -54,7 +54,7 @@ def replicated_healing_events():
     load_into_destination_query = f"""
         create or replace table events as (
             select * from '{AUDIT_STORAGE_PATH}'
-            where id >= 0);
+            );
     """
 
     dest_conn.query(load_into_destination_query)
@@ -115,7 +115,7 @@ def data_diff_healing_check() -> AssetCheckResult:
     total_healed_diffs_count = len(healed_diff_results)
 
     yield AssetCheckResult(
-        passed=total_healed_diffs_count <= 5,
+        passed=total_healed_diffs_count == 0,
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
