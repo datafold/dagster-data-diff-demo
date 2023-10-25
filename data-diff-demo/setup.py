@@ -9,6 +9,8 @@ setup(
         "data-diff==0.9.7",
         "duckdb==0.9.1",
         "pandas==2.1.1",
+        "snowflake-connector-python==3.3.1",
+        "psycopg2==2.9.9",
     ],
     extras_require={
         "dev": [
@@ -16,6 +18,7 @@ setup(
             "pytest==7.4.2",
             "ruff==0.1.2",
             "pre-commit==3.5.0",
+            "python-dotenv==1.0.0",
         ]
     },
 )

@@ -1,6 +1,8 @@
 import pandas as pd
 import psycopg2
 import snowflake.connector
+from dotenv import load_dotenv
+import os
 
 from dagster import (
     asset,
@@ -13,22 +15,26 @@ from dagster import (
 from data_diff import connect_to_table, diff_tables
 from random import randint
 
-SOURCE_DATABASE_HOST = "localhost"
-SOURCE_DATABASE_PORT = "5432"
-SOURCE_DATABASE_NAME = "source_db"
-SOURCE_DATABASE_USER = "postgres"
-SOURCE_DATABASE_PASSWORD = "password"
-DESTINATION_SNOWFLAKE_ACCOUNT = "BYA42734"
-DESTINATION_SNOWFLAKE_USER = "<user>"
-DESTINATION_SNOWFLAKE_PASSWORD = "<password>"
-DESTINATION_SNOWFLAKE_WAREHOUSE = "<warehouse>"
-DESTINATION_SNOWFLAKE_DATABASE = "<database>"
-DESTINATION_SNOWFLAKE_SCHEMA = "<schema>"
+load_dotenv()
+
+SOURCE_DATABASE_HOST = os.getenv("SOURCE_DATABASE_HOST")
+SOURCE_DATABASE_PORT = os.getenv("SOURCE_DATABASE_PORT")
+SOURCE_DATABASE_NAME = os.getenv("SOURCE_DATABASE_NAME")
+SOURCE_DATABASE_USER = os.getenv("SOURCE_DATABASE_USER")
+SOURCE_DATABASE_PASSWORD = os.getenv("SOURCE_DATABASE_PASSWORD")
+DESTINATION_SNOWFLAKE_ACCOUNT = os.getenv("DESTINATION_SNOWFLAKE_ACCOUNT")
+DESTINATION_SNOWFLAKE_USER = os.getenv("DESTINATION_SNOWFLAKE_USER")
+DESTINATION_SNOWFLAKE_PASSWORD = os.getenv("DESTINATION_SNOWFLAKE_PASSWORD")
+DESTINATION_SNOWFLAKE_WAREHOUSE = os.getenv("DESTINATION_SNOWFLAKE_WAREHOUSE")
+DESTINATION_SNOWFLAKE_DATABASE = os.getenv("DESTINATION_SNOWFLAKE_DATABASE")
+DESTINATION_SNOWFLAKE_SCHEMA = os.getenv("DESTINATION_SNOWFLAKE_SCHEMA")
+DESTINATION_SNOWFLAKE_ROLE = os.getenv("DESTINATION_SNOWFLAKE_ROLE")
+
 EVENT_COUNT = 100
 
 
 @asset
-def source_events():
+def source_postgres_events():
     conn = psycopg2.connect(
         host=SOURCE_DATABASE_HOST,
         port=SOURCE_DATABASE_PORT,
@@ -61,8 +67,8 @@ def source_events():
     conn.close()
 
 
-@asset(deps=[source_events])
-def replicated_events():
+@asset(deps=[source_postgres_events])
+def replicated_snowflake_events():
     src_conn = psycopg2.connect(
         host=SOURCE_DATABASE_HOST,
         port=SOURCE_DATABASE_PORT,
@@ -80,6 +86,7 @@ def replicated_events():
         warehouse=DESTINATION_SNOWFLAKE_WAREHOUSE,
         database=DESTINATION_SNOWFLAKE_DATABASE,
         schema=DESTINATION_SNOWFLAKE_SCHEMA,
+        role=DESTINATION_SNOWFLAKE_ROLE,
     )
     src_df.to_sql("events", sf_conn, if_exists="replace", index=False)
     sf_cursor = sf_conn.cursor()
@@ -96,18 +103,21 @@ def replicated_events():
 
 
 @asset_check(
-    name="data_diff_check",
-    asset=replicated_events,
+    name="postgres_to_snowflake_data_diff_check",
+    asset=replicated_snowflake_events,
 )
-def data_diff_check() -> AssetCheckResult:
-    template = {
-        "postgres_driver": "psycopg2",
-        "snowflake_driver": "snowflake.connector",
+def postgres_to_snowflake_data_diff_check() -> AssetCheckResult:
+    template_postgres = {
+        "driver": "postgresql",
+    }
+
+    template_snowflake = {
+        "driver": "snowflake",
     }
 
     source_events_table = connect_to_table(
         {
-            **template,
+            **template_postgres,
             "host": SOURCE_DATABASE_HOST,
             "port": SOURCE_DATABASE_PORT,
             "dbname": SOURCE_DATABASE_NAME,
@@ -119,7 +129,7 @@ def data_diff_check() -> AssetCheckResult:
 
     replicated_events_table = connect_to_table(
         {
-            **template,
+            **template_snowflake,
             "account": DESTINATION_SNOWFLAKE_ACCOUNT,
             "user": DESTINATION_SNOWFLAKE_USER,
             "password": DESTINATION_SNOWFLAKE_PASSWORD,
@@ -159,6 +169,6 @@ def data_diff_check() -> AssetCheckResult:
 
 
 defs = Definitions(
-    assets=[source_events, replicated_events],
-    asset_checks=[data_diff_check],
+    assets=[source_postgres_events, replicated_snowflake_events],
+    asset_checks=[postgres_to_snowflake_data_diff_check],
 )

@@ -139,6 +139,7 @@ def data_diff_healing_check() -> AssetCheckResult:
         passed=total_healed_diffs_count == 0,
         severity=AssetCheckSeverity.ERROR,
         metadata={
+            "total_diffs_count_original": MetadataValue.int(total_diffs_count),
             "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
             "source_row_diffs": MetadataValue.int(
                 len(results[results["diff_type"] == "-"])
