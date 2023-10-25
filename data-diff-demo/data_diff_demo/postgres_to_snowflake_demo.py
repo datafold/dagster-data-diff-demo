@@ -1,6 +1,7 @@
 import pandas as pd
 import psycopg2
-import snowflake.connector
+from sqlalchemy import create_engine
+from sqlalchemy.dialects import registry
 from dotenv import load_dotenv
 import os
 
@@ -48,8 +49,8 @@ def source_postgres_events():
 
     create_table_query = """
         CREATE TABLE events (
-            id INTEGER,
-            date DATE
+            "ID" INTEGER,
+            "DATE" DATE
         );
     """
     cursor.execute(create_table_query)
@@ -76,30 +77,23 @@ def replicated_snowflake_events():
         user=SOURCE_DATABASE_USER,
         password=SOURCE_DATABASE_PASSWORD,
     )
-    src_df = pd.read_sql("SELECT * FROM events WHERE id >= 0", src_conn)
+    src_df = pd.read_sql('SELECT * FROM events WHERE "ID" > 0', src_conn)
     src_conn.close()
 
-    sf_conn = snowflake.connector.connect(
-        account=DESTINATION_SNOWFLAKE_ACCOUNT,
-        user=DESTINATION_SNOWFLAKE_USER,
-        password=DESTINATION_SNOWFLAKE_PASSWORD,
-        warehouse=DESTINATION_SNOWFLAKE_WAREHOUSE,
-        database=DESTINATION_SNOWFLAKE_DATABASE,
-        schema=DESTINATION_SNOWFLAKE_SCHEMA,
-        role=DESTINATION_SNOWFLAKE_ROLE,
+    registry.register("snowflake", "snowflake.sqlalchemy", "dialect")
+
+    sf_engine = create_engine(
+        f"snowflake://{DESTINATION_SNOWFLAKE_USER}:{DESTINATION_SNOWFLAKE_PASSWORD}@{DESTINATION_SNOWFLAKE_ACCOUNT}/{DESTINATION_SNOWFLAKE_DATABASE}/{DESTINATION_SNOWFLAKE_SCHEMA}?warehouse={DESTINATION_SNOWFLAKE_WAREHOUSE}&role={DESTINATION_SNOWFLAKE_ROLE}"
     )
-    src_df.to_sql("events", sf_conn, if_exists="replace", index=False)
-    sf_cursor = sf_conn.cursor()
 
-    noise_size = randint(5, 15)
-    for i in range(noise_size):
-        sf_cursor.execute(
-            f"UPDATE events SET date = CURRENT_DATE() - INTERVAL '{i} days' WHERE id = {i};"
-        )
+    src_df.to_sql("events", sf_engine, if_exists="replace", index=False)
 
-    sf_conn.commit()
-    sf_cursor.close()
-    sf_conn.close()
+    with sf_engine.connect() as sf_conn:
+        noise_size = randint(5, 15)
+        for i in range(noise_size):
+            sf_conn.execute(
+                f"UPDATE events SET DATE = CURRENT_DATE() - 2 WHERE ID = {i};"
+            )
 
 
 @asset_check(
@@ -136,16 +130,17 @@ def postgres_to_snowflake_data_diff_check() -> AssetCheckResult:
             "warehouse": DESTINATION_SNOWFLAKE_WAREHOUSE,
             "database": DESTINATION_SNOWFLAKE_DATABASE,
             "schema": DESTINATION_SNOWFLAKE_SCHEMA,
+            "role": DESTINATION_SNOWFLAKE_ROLE,
         },
-        "events",
+        "EVENTS",
     )
 
     results = pd.DataFrame(
         diff_tables(
             source_events_table,
             replicated_events_table,
-            key_columns=["id"],
-            extra_columns=("date",),
+            key_columns=["ID"],
+            extra_columns=("DATE",),
         ),
         columns=["diff_type", "row_diffs"],
     )
@@ -153,7 +148,7 @@ def postgres_to_snowflake_data_diff_check() -> AssetCheckResult:
     total_diffs_count = len(results)
 
     yield AssetCheckResult(
-        passed=total_diffs_count <= 50,
+        passed=total_diffs_count == 0,
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs": MetadataValue.int(total_diffs_count),

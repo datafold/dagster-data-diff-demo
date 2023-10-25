@@ -11,6 +11,8 @@ setup(
         "pandas==2.1.1",
         "snowflake-connector-python==3.3.1",
         "psycopg2==2.9.9",
+        "snowflake-sqlalchemy==1.5.0",
+        "sqlalchemy==1.4.49",
     ],
     extras_require={
         "dev": [
