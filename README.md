@@ -15,6 +15,24 @@ pip install -e ".[dev]"
 source venv/bin/activate
 ```
 
+```
+# define environment variables in a .env file in this directory: data-diff-demo/data_diff_demo/.env
+# placeholder examples below for postgres and snowflake
+
+SOURCE_DATABASE_HOST="ep-shrill-meadow-043325.us-west-2.aws.neon.tech"
+SOURCE_DATABASE_PORT="5432"
+SOURCE_DATABASE_NAME="neondb"
+SOURCE_DATABASE_USER="sungwonchung3"
+SOURCE_DATABASE_PASSWORD="asdfasdfasdf"
+DESTINATION_SNOWFLAKE_ACCOUNT="ASDFASDFASDF"
+DESTINATION_SNOWFLAKE_USER="sung"
+DESTINATION_SNOWFLAKE_PASSWORD="ASDFASDFASDF"
+DESTINATION_SNOWFLAKE_WAREHOUSE="INTEGRATION"
+DESTINATION_SNOWFLAKE_DATABASE="DEMO"
+DESTINATION_SNOWFLAKE_SCHEMA="DBT_SUNG"
+DESTINATION_SNOWFLAKE_ROLE="DEMO_ROLE"
+```
+
 ```bash
 # start dagster development server
 dagster dev
