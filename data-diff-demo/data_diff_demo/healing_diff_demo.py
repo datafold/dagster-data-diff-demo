@@ -1,3 +1,8 @@
+from random import randint
+
+import duckdb
+import pandas as pd
+
 from dagster import (
     asset,
     asset_check,
@@ -10,10 +15,6 @@ from data_diff import connect_to_table, diff_tables
 import warnings
 
 warnings.simplefilter("ignore")  # TODO: remove this to see all experimental warnings
-from random import randint
-
-import duckdb
-import pandas as pd
 
 SOURCE_DATABASE_PATH = "data/source_healing.db"
 AUDIT_STORAGE_PATH = "data/staging_healing.parquet"
