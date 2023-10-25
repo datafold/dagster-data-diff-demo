@@ -3,6 +3,8 @@ Dagster + Datafold: Better Together
 
 This is a demo project for the Dagster + data-diff integration. Its goal is to give you clear examples of how to use Dagster's asset checks to solve source to target replication problems in your data pipelines.
 
+TODO: Add public loom video with gif thumbnail
+
 ## Setup
 
 ```bash
@@ -38,10 +40,9 @@ DESTINATION_SNOWFLAKE_ROLE="DEMO_ROLE"
 dagster dev
 ```
 
-TODO: add GIF on materializing all assets and clicking through UI
+`-`: original rows in source
 
-"-": original rows in source
-"+": new/additional rows in target
+`+`: new/additional rows in target
 
 In this example, there are 2 source rows that do not exist in the target table.
 
