@@ -107,7 +107,7 @@ def data_diff_check() -> AssetCheckResult:
     total_diffs_count = len(results)
 
     yield AssetCheckResult(
-        passed=total_diffs_count <= 50,
+        passed=total_diffs_count == 50,
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs": MetadataValue.int(total_diffs_count),
