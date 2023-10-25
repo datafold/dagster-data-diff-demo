@@ -2,7 +2,14 @@ import pandas as pd
 import psycopg2
 import snowflake.connector
 
-from dagster import asset, asset_check, Definitions, AssetCheckResult, MetadataValue, AssetCheckSeverity
+from dagster import (
+    asset,
+    asset_check,
+    Definitions,
+    AssetCheckResult,
+    MetadataValue,
+    AssetCheckSeverity,
+)
 from data_diff import connect_to_table, diff_tables
 from random import randint
 
@@ -22,11 +29,13 @@ EVENT_COUNT = 100
 
 @asset
 def source_events():
-    conn = psycopg2.connect(host=SOURCE_DATABASE_HOST,
-                            port=SOURCE_DATABASE_PORT,
-                            dbname=SOURCE_DATABASE_NAME,
-                            user=SOURCE_DATABASE_USER,
-                            password=SOURCE_DATABASE_PASSWORD)
+    conn = psycopg2.connect(
+        host=SOURCE_DATABASE_HOST,
+        port=SOURCE_DATABASE_PORT,
+        dbname=SOURCE_DATABASE_NAME,
+        user=SOURCE_DATABASE_USER,
+        password=SOURCE_DATABASE_PASSWORD,
+    )
     cursor = conn.cursor()
 
     cursor.execute("DROP TABLE IF EXISTS events;")
@@ -52,15 +61,15 @@ def source_events():
     conn.close()
 
 
-@asset(
-    deps=[source_events]
-)
+@asset(deps=[source_events])
 def replicated_events():
-    src_conn = psycopg2.connect(host=SOURCE_DATABASE_HOST,
-                                port=SOURCE_DATABASE_PORT,
-                                dbname=SOURCE_DATABASE_NAME,
-                                user=SOURCE_DATABASE_USER,
-                                password=SOURCE_DATABASE_PASSWORD)
+    src_conn = psycopg2.connect(
+        host=SOURCE_DATABASE_HOST,
+        port=SOURCE_DATABASE_PORT,
+        dbname=SOURCE_DATABASE_NAME,
+        user=SOURCE_DATABASE_USER,
+        password=SOURCE_DATABASE_PASSWORD,
+    )
     src_df = pd.read_sql("SELECT * FROM events WHERE id >= 0", src_conn)
     src_conn.close()
 
@@ -72,12 +81,14 @@ def replicated_events():
         database=DESTINATION_SNOWFLAKE_DATABASE,
         schema=DESTINATION_SNOWFLAKE_SCHEMA,
     )
-    src_df.to_sql('events', sf_conn, if_exists='replace', index=False)
+    src_df.to_sql("events", sf_conn, if_exists="replace", index=False)
     sf_cursor = sf_conn.cursor()
 
     noise_size = randint(5, 15)
     for i in range(noise_size):
-        sf_cursor.execute(f"UPDATE events SET date = CURRENT_DATE() - INTERVAL '{i} days' WHERE id = {i};")
+        sf_cursor.execute(
+            f"UPDATE events SET date = CURRENT_DATE() - INTERVAL '{i} days' WHERE id = {i};"
+        )
 
     sf_conn.commit()
     sf_cursor.close()
@@ -90,30 +101,44 @@ def replicated_events():
 )
 def data_diff_check() -> AssetCheckResult:
     template = {
-        'postgres_driver': 'psycopg2',
-        'snowflake_driver': 'snowflake.connector'
+        "postgres_driver": "psycopg2",
+        "snowflake_driver": "snowflake.connector",
     }
 
-    source_events_table = connect_to_table({
-        **template,
-        "host": SOURCE_DATABASE_HOST,
-        "port": SOURCE_DATABASE_PORT,
-        "dbname": SOURCE_DATABASE_NAME,
-        "user": SOURCE_DATABASE_USER,
-        "password": SOURCE_DATABASE_PASSWORD
-    }, "events")
+    source_events_table = connect_to_table(
+        {
+            **template,
+            "host": SOURCE_DATABASE_HOST,
+            "port": SOURCE_DATABASE_PORT,
+            "dbname": SOURCE_DATABASE_NAME,
+            "user": SOURCE_DATABASE_USER,
+            "password": SOURCE_DATABASE_PASSWORD,
+        },
+        "events",
+    )
 
-    replicated_events_table = connect_to_table({
-        **template,
-        "account": DESTINATION_SNOWFLAKE_ACCOUNT,
-        "user": DESTINATION_SNOWFLAKE_USER,
-        "password": DESTINATION_SNOWFLAKE_PASSWORD,
-        "warehouse": DESTINATION_SNOWFLAKE_WAREHOUSE,
-        "database": DESTINATION_SNOWFLAKE_DATABASE,
-        "schema": DESTINATION_SNOWFLAKE_SCHEMA
-    }, "events")
+    replicated_events_table = connect_to_table(
+        {
+            **template,
+            "account": DESTINATION_SNOWFLAKE_ACCOUNT,
+            "user": DESTINATION_SNOWFLAKE_USER,
+            "password": DESTINATION_SNOWFLAKE_PASSWORD,
+            "warehouse": DESTINATION_SNOWFLAKE_WAREHOUSE,
+            "database": DESTINATION_SNOWFLAKE_DATABASE,
+            "schema": DESTINATION_SNOWFLAKE_SCHEMA,
+        },
+        "events",
+    )
 
-    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "row_diffs"])
+    results = pd.DataFrame(
+        diff_tables(
+            source_events_table,
+            replicated_events_table,
+            key_columns=["id"],
+            extra_columns=("date",),
+        ),
+        columns=["diff_type", "row_diffs"],
+    )
 
     total_diffs_count = len(results)
 
@@ -122,10 +147,14 @@ def data_diff_check() -> AssetCheckResult:
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs": MetadataValue.int(total_diffs_count),
-            "source_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "-"])),
-            "target_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "+"])),
-            "preview": MetadataValue.md(results.head(100).to_markdown())
-        }
+            "source_row_diffs": MetadataValue.int(
+                len(results[results["diff_type"] == "-"])
+            ),
+            "target_row_diffs": MetadataValue.int(
+                len(results[results["diff_type"] == "+"])
+            ),
+            "preview": MetadataValue.md(results.head(100).to_markdown()),
+        },
     )
 
 

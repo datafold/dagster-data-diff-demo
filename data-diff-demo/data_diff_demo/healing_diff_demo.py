@@ -1,7 +1,15 @@
-from dagster import asset, asset_check, Definitions, AssetCheckResult, MetadataValue, AssetCheckSeverity
+from dagster import (
+    asset,
+    asset_check,
+    Definitions,
+    AssetCheckResult,
+    MetadataValue,
+    AssetCheckSeverity,
+)
 from data_diff import connect_to_table, diff_tables
 import warnings
-warnings.simplefilter("ignore") # TODO: remove this to see all experimental warnings
+
+warnings.simplefilter("ignore")  # TODO: remove this to see all experimental warnings
 from random import randint
 
 import duckdb
@@ -13,13 +21,14 @@ DESTINATION_DATABASE_PATH = "data/destination_healing.db"
 
 EVENT_COUNT = 100
 
+
 @asset
 def source_healing_events():
     query = "create or replace table events as ("
 
     for i in range(EVENT_COUNT):
         query += f" select {i} as id, current_date + {i} as date union all "
-    
+
     noise_size = randint(1, 5)
 
     for i in range(noise_size):
@@ -32,9 +41,8 @@ def source_healing_events():
     conn = duckdb.connect(SOURCE_DATABASE_PATH)
     conn.query(query)
 
-@asset(
-    deps=[source_healing_events]
-)
+
+@asset(deps=[source_healing_events])
 def replicated_healing_events():
     src_conn = duckdb.connect(SOURCE_DATABASE_PATH)
 
@@ -75,21 +83,25 @@ def replicated_healing_events():
     asset=replicated_healing_events,
 )
 def data_diff_healing_check() -> AssetCheckResult:
-    template = {
-        'driver': 'duckdb'
-    }
+    template = {"driver": "duckdb"}
 
-    source_events_table = connect_to_table({
-        **template,
-        "filepath": SOURCE_DATABASE_PATH
-    }, "main.events")
+    source_events_table = connect_to_table(
+        {**template, "filepath": SOURCE_DATABASE_PATH}, "main.events"
+    )
 
-    replicated_events_table = connect_to_table({
-        **template,
-        "filepath": DESTINATION_DATABASE_PATH
-    }, "main.events")
+    replicated_events_table = connect_to_table(
+        {**template, "filepath": DESTINATION_DATABASE_PATH}, "main.events"
+    )
 
-    results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "row_diffs"])
+    results = pd.DataFrame(
+        diff_tables(
+            source_events_table,
+            replicated_events_table,
+            key_columns=["id"],
+            extra_columns=("date",),
+        ),
+        columns=["diff_type", "row_diffs"],
+    )
 
     total_diffs_count = len(results)
 
@@ -102,15 +114,23 @@ def data_diff_healing_check() -> AssetCheckResult:
         row_id = int(row["row_diffs"][0])  # Ensure `id` is an integer.
         row_date = row["row_diffs"][1]
 
-        query = f'''
+        query = f"""
         UPDATE events
         SET date = '{row_date}'
         WHERE id = {row_id}
-        '''
+        """
 
         con.execute(query)
 
-    healed_diff_results = pd.DataFrame(diff_tables(source_events_table, replicated_events_table, key_columns=["id"], extra_columns=("date",)), columns=["diff_type", "row_diffs"])
+    healed_diff_results = pd.DataFrame(
+        diff_tables(
+            source_events_table,
+            replicated_events_table,
+            key_columns=["id"],
+            extra_columns=("date",),
+        ),
+        columns=["diff_type", "row_diffs"],
+    )
 
     total_healed_diffs_count = len(healed_diff_results)
 
@@ -119,13 +139,22 @@ def data_diff_healing_check() -> AssetCheckResult:
         severity=AssetCheckSeverity.ERROR,
         metadata={
             "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
-            "source_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "-"])),
-            "target_row_diffs": MetadataValue.int(len(results[results["diff_type"] == "+"])),
+            "source_row_diffs": MetadataValue.int(
+                len(results[results["diff_type"] == "-"])
+            ),
+            "target_row_diffs": MetadataValue.int(
+                len(results[results["diff_type"] == "+"])
+            ),
             "preview_all_diffs": MetadataValue.md(results.head(100).to_markdown()),
-            "preview_diff_overwrites": MetadataValue.md(source_row_diffs.head(100).to_markdown()),
-            "preview_diffs_remaining": MetadataValue.md(healed_diff_results.head(100).to_markdown())
-        }
+            "preview_diff_overwrites": MetadataValue.md(
+                source_row_diffs.head(100).to_markdown()
+            ),
+            "preview_diffs_remaining": MetadataValue.md(
+                healed_diff_results.head(100).to_markdown()
+            ),
+        },
     )
+
 
 defs = Definitions(
     assets=[source_healing_events, replicated_healing_events],
