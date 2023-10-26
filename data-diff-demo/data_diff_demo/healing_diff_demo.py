@@ -38,8 +38,6 @@ def source_healing_events():
 
 @op
 def data_diff_healing_check(context, source_healing_events):
-    source_healing_events()
-
     template = {"driver": "duckdb"}
 
     source_events_table = connect_to_table(
