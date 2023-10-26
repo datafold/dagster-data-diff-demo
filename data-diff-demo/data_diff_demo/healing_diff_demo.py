@@ -114,6 +114,7 @@ def data_diff_healing_check(context, source_healing_events):
 
     if total_healed_diffs_count == 0:
         context.log.info("All diffs healed!")
+        return total_healed_diffs_count
     else:
         raise Exception("Diffs remain after healing!")
 
