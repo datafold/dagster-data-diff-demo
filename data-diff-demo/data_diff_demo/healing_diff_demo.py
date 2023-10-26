@@ -3,14 +3,7 @@ from random import randint
 import duckdb
 import pandas as pd
 
-from dagster import (
-    asset,
-    asset_check,
-    Definitions,
-    AssetCheckResult,
-    MetadataValue,
-    AssetCheckSeverity,
-)
+from dagster import asset, Definitions, MetadataValue, graph_asset, AssetObservation, op
 from data_diff import connect_to_table, diff_tables
 import warnings
 
@@ -43,8 +36,8 @@ def source_healing_events():
     conn.query(query)
 
 
-@asset(deps=[source_healing_events])
-def replicated_healing_events():
+@op
+def replicate_events(source_healing_events):
     src_conn = duckdb.connect(SOURCE_DATABASE_PATH)
 
     dump_to_parquet_query = f"""
@@ -79,11 +72,8 @@ def replicated_healing_events():
         dest_conn.query(update_rows_query)
 
 
-@asset_check(
-    name="data_diff_healing_check",
-    asset=replicated_healing_events,
-)
-def data_diff_healing_check() -> AssetCheckResult:
+@op
+def data_diff_healing_check(context, source_healing_events):
     template = {"driver": "duckdb"}
 
     source_events_table = connect_to_table(
@@ -135,30 +125,41 @@ def data_diff_healing_check() -> AssetCheckResult:
 
     total_healed_diffs_count = len(healed_diff_results)
 
-    yield AssetCheckResult(
-        passed=total_healed_diffs_count == 0,
-        severity=AssetCheckSeverity.ERROR,
-        metadata={
-            "total_diffs_count_original": MetadataValue.int(total_diffs_count),
-            "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
-            "source_row_diffs": MetadataValue.int(
-                len(results[results["diff_type"] == "-"])
-            ),
-            "target_row_diffs": MetadataValue.int(
-                len(results[results["diff_type"] == "+"])
-            ),
-            "preview_all_diffs": MetadataValue.md(results.head(100).to_markdown()),
-            "preview_diff_overwrites": MetadataValue.md(
-                source_row_diffs.head(100).to_markdown()
-            ),
-            "preview_diffs_remaining": MetadataValue.md(
-                healed_diff_results.head(100).to_markdown()
-            ),
-        },
+    context.log_event(
+        AssetObservation(
+            asset_key="replicated_healing_events",
+            metadata={
+                "total_diffs_count_original": MetadataValue.int(total_diffs_count),
+                "total_diffs_unhealed": MetadataValue.int(total_healed_diffs_count),
+                "source_row_diffs": MetadataValue.int(
+                    len(results[results["diff_type"] == "-"])
+                ),
+                "target_row_diffs": MetadataValue.int(
+                    len(results[results["diff_type"] == "+"])
+                ),
+                "preview_all_diffs": MetadataValue.md(results.head(100).to_markdown()),
+                "preview_diff_overwrites": MetadataValue.md(
+                    source_row_diffs.head(100).to_markdown()
+                ),
+                "preview_diffs_remaining": MetadataValue.md(
+                    healed_diff_results.head(100).to_markdown()
+                ),
+            },
+        )
     )
+
+    if total_healed_diffs_count == 0:
+        context.log.info("All diffs healed!")
+        return total_healed_diffs_count
+    else:
+        raise Exception("Diffs remain after healing!")
+
+
+@graph_asset
+def replicated_healing_events(source_healing_events):
+    return data_diff_healing_check(replicate_events(source_healing_events))
 
 
 defs = Definitions(
     assets=[source_healing_events, replicated_healing_events],
-    asset_checks=[data_diff_healing_check],
 )
