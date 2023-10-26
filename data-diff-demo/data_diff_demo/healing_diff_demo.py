@@ -37,6 +37,42 @@ def source_healing_events():
 
 
 @op
+def replicate_events(source_healing_events):
+    src_conn = duckdb.connect(SOURCE_DATABASE_PATH)
+
+    dump_to_parquet_query = f"""
+        copy (
+            select *
+            from events
+        ) to '{AUDIT_STORAGE_PATH}' (
+            format 'parquet'
+        );
+    """
+
+    src_conn.query(dump_to_parquet_query)
+
+    dest_conn = duckdb.connect(DESTINATION_DATABASE_PATH)
+
+    load_into_destination_query = f"""
+        create or replace table events as (
+            select * from '{AUDIT_STORAGE_PATH}'
+            );
+    """
+
+    dest_conn.query(load_into_destination_query)
+
+    noise_size = randint(5, 15)
+
+    for i in range(noise_size):
+        update_rows_query = f"""
+        UPDATE events
+                SET date = current_date - {i}
+                WHERE id = {i};
+        """
+        dest_conn.query(update_rows_query)
+
+
+@op
 def data_diff_healing_check(context, source_healing_events):
     template = {"driver": "duckdb"}
 
@@ -121,40 +157,7 @@ def data_diff_healing_check(context, source_healing_events):
 
 @graph_asset()
 def replicated_healing_events(source_healing_events):
-    src_conn = duckdb.connect(SOURCE_DATABASE_PATH)
-
-    dump_to_parquet_query = f"""
-        copy (
-            select *
-            from events
-        ) to '{AUDIT_STORAGE_PATH}' (
-            format 'parquet'
-        );
-    """
-
-    src_conn.query(dump_to_parquet_query)
-
-    dest_conn = duckdb.connect(DESTINATION_DATABASE_PATH)
-
-    load_into_destination_query = f"""
-        create or replace table events as (
-            select * from '{AUDIT_STORAGE_PATH}'
-            );
-    """
-
-    dest_conn.query(load_into_destination_query)
-
-    noise_size = randint(5, 15)
-
-    for i in range(noise_size):
-        update_rows_query = f"""
-        UPDATE events
-                SET date = current_date - {i}
-                WHERE id = {i};
-        """
-        dest_conn.query(update_rows_query)
-
-    return data_diff_healing_check(source_healing_events)
+    return data_diff_healing_check(replicate_events(source_healing_events))
 
 
 defs = Definitions(
