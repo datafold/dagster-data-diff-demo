@@ -16,7 +16,7 @@ DESTINATION_DATABASE_PATH = "data/destination_healing.db"
 EVENT_COUNT = 100
 
 
-@asset()
+@asset
 def source_healing_events():
     query = "create or replace table events as ("
 
@@ -155,7 +155,7 @@ def data_diff_healing_check(context, source_healing_events):
         raise Exception("Diffs remain after healing!")
 
 
-@graph_asset()
+@graph_asset
 def replicated_healing_events(source_healing_events):
     return data_diff_healing_check(replicate_events(source_healing_events))
 
