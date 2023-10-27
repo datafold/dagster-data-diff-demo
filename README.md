@@ -4,7 +4,11 @@
   <img src="images/dagster_and_datafold.png">
 </p>
 
-This is a demo project for the Dagster + data-diff integration. Its goal is to give you clear examples of how to use Dagster's asset checks to solve source to target replication problems in your data pipelines.
+This is a demo project for the Dagster + Datafold integration using [`data-diff`](https://github.com/datafold/data-diff#data-diff-compare-datasets-fast-within-or-across-sql-databases). The goal is to give you clear examples of how to use Dagster's [asset checks](https://docs.dagster.io/concepts/assets/asset-checks) to solve data replication problems in your data pipelines by validating the data diff between the source and target tables.
+
+Learn more about Datafold: [here](https://www.datafold.com/data-replication)
+
+Learn more about Dagster: [here](https://dagster.io/)
 
 TODO: Add public loom video with gif thumbnail
 
@@ -42,6 +46,25 @@ DESTINATION_SNOWFLAKE_ROLE="DEMO_ROLE"
 # start dagster development server
 dagster dev
 ```
+
+Open http://localhost:3000 in your browser
+
+Click `Materialize all` in the top right corner of the Dagster UI to materialize all assets
+
+![](images/start.png)
+
+You should see the following assets materialized with 2 asset checks intentionally failed
+
+![](images/end.png)
+
+When you click to view the asset check metadata, you should see the following output
+
+![](images/example_asset_check.png)
+
+Now apply this template project to your own Dagster project and start using `data-diff` to validate real data pipelines!
+
+
+## Interpreting the Data Diff Output
 
 `-`: original rows in source
 
