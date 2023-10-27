@@ -72,6 +72,7 @@ def replicate_events(source_healing_events):
         dest_conn.query(update_rows_query)
 
 
+# Note: this example does NOT account for schema evolution (e.g. adding/dropping a column, data type changes, etc.)
 @op
 def data_diff_healing_check(context, source_healing_events):
     template = {"driver": "duckdb"}
