@@ -1,6 +1,6 @@
 from dagster import Definitions, load_assets_from_modules
 
-from . import simple_diff_demo, healing_diff_demo, postgres_to_snowflake_demo
+from .assets import simple_diff_demo, healing_diff_demo, postgres_to_snowflake_demo
 
 all_assets = load_assets_from_modules(
     [simple_diff_demo, healing_diff_demo, postgres_to_snowflake_demo]
