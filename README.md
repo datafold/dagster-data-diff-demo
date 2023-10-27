@@ -68,7 +68,7 @@ Now apply this template project to your own Dagster project and start using `dat
 
 `-`: original rows in source
 
-`+`: new/additional rows in target
+`+`: modified/additional rows in target
 
 In this example, there are 2 source rows that do not exist in the target table.
 
