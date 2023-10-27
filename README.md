@@ -18,7 +18,7 @@ TODO: Add public loom video with gif thumbnail
 
 [`healing_diff_demo.py`](data-diff-demo/data_diff_demo/assets/healing_diff_demo.py): Generates data in a duckdb source table, exports it to parquet, and creates a separate duckdb target table with intentional differences based on the parquet file. It runs a data diff between the source and target tables located in separate duckdb databases, overwrites the target table diffs with the original source rows, and outputs the data diff as [asset observation](https://docs.dagster.io/concepts/assets/asset-observations) metadata for easy review.
 
-[`postgres_to_snowflake_demo.py`](data-diff-demo/data_diff_demo/assets/postgres_to_snowflake_demo.py): Generates data in a Postgres source table, exports it to a pandas dataframe, and creates a Snowflake target table with intentional differences based on the dataframe. It runs a data diff between the source and target tables located in separate databases, and outputs the data diff as asset check metadata for easy review.
+[`postgres_to_snowflake_demo.py`](data-diff-demo/data_diff_demo/assets/postgres_to_snowflake_demo.py): Generates data in a Postgres source table, exports it to a pandas dataframe, and creates a Snowflake target table with intentional differences based on the dataframe. It runs a data diff between the source and target tables located in separate databases, and outputs the data diff as asset check metadata for easy review. Note: this will only work if you configure the Postgres and Snowflake environment variables below. If you don't run this example, you can still see the functioning examples above.
 
 
 ## Setup
