@@ -21,7 +21,7 @@ TODO: Add public loom video with gif thumbnail
 [`postgres_to_snowflake_demo.py`](data-diff-demo/data_diff_demo/assets/postgres_to_snowflake_demo.py): Generates data in a Postgres source table, exports it to a pandas dataframe, and creates a Snowflake target table with intentional differences based on the dataframe. It runs a data diff between the source and target tables located in separate databases, and outputs the data diff as asset check metadata for easy review. Note: this will only work if you configure the Postgres and Snowflake environment variables below. If you don't run this example, you can still see the functioning examples above.
 
 
-## Setup
+## Quick Start
 
 ```bash
 # setup python dependencies
