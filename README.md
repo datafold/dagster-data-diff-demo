@@ -1,5 +1,4 @@
-# dagster-data-diff-demo
-Datafold + Dagster: Better Together
+# Datafold + Dagster: Better Together
 
 <p align="center">
   <img src="images/dagster_and_datafold.png">
