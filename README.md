@@ -1,5 +1,9 @@
 # dagster-data-diff-demo
-Dagster + Datafold: Better Together
+Datafold + Dagster: Better Together
+
+<p align="center">
+  <img src="images/dagster_and_datafold.png">
+</p>
 
 This is a demo project for the Dagster + data-diff integration. Its goal is to give you clear examples of how to use Dagster's asset checks to solve source to target replication problems in your data pipelines.
 
