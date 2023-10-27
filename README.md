@@ -12,6 +12,15 @@ Learn more about Dagster: [here](https://dagster.io/)
 
 TODO: Add public loom video with gif thumbnail
 
+## Demo Examples
+
+[`simple_diff_demo.py`](data-diff-demo/data_diff_demo/simple_diff_demo.py): Generates data in a duckdb source table, exports it to parquet, and creates a separate duckdb target table with intentional differences based on the parquet file. It runs a data diff between the source and target tables located in separate duckdb databases, and outputs the data diff as asset check metadata for easy review.
+
+[`healing_diff_demo.py`](data-diff-demo/data_diff_demo/healing_diff_demo.py): Generates data in a duckdb source table, exports it to parquet, and creates a separate duckdb target table with intentional differences based on the parquet file. It runs a data diff between the source and target tables located in separate duckdb databases, overwrites the target table diffs with the original source rows, and outputs the data diff as [asset observation](https://docs.dagster.io/concepts/assets/asset-observations) metadata for easy review.
+
+[`postgres_to_snowflake_demo.py`](data-diff-demo/data_diff_demo/postgres_to_snowflake_demo.py): Generates data in a Postgres source table, exports it to a pandas dataframe, and creates a Snowflake target table with intentional differences based on the dataframe. It runs a data diff between the source and target tables located in separate databases, and outputs the data diff as asset check metadata for easy review.
+
+
 ## Setup
 
 ```bash
@@ -23,6 +32,8 @@ pip install --upgrade pip
 pip install -e ".[dev]"
 source venv/bin/activate
 ```
+
+> Optional: This applies only to the assets contained in `postgres_to_snowflake_demo.py`. If you want a more realistic example, we recommend you define these configurations.
 
 ```
 # define environment variables in a .env file in this directory: data-diff-demo/data_diff_demo/.env
