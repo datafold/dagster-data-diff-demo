@@ -77,6 +77,8 @@ Now apply this template project to your own Dagster project and start using `dat
 
 ## Interpreting the Data Diff Output
 
+> How it works: `data-diff` uses built-in hash functions within the source to target databases to compare data and then outputs the differences in a human-readable format if hash mismatches are found. This is a fast and efficient way to compare data across databases. Performance is similar to a `SELECT COUNT(*)` query. [Learn More](https://docs.datafold.com/data_diff/cross-database_diffing/#high-level-algorithm)
+
 `-`: original rows in source
 
 `+`: modified/additional rows in target
