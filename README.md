@@ -1,8 +1,8 @@
-# Datafold + Dagster: Better Together
-
 <p align="center">
   <img src="images/dagster_and_datafold.png">
 </p>
+
+# Datafold + Dagster: Better Together
 
 This is a demo project for the Dagster + Datafold integration using [`data-diff`](https://github.com/datafold/data-diff#data-diff-compare-datasets-fast-within-or-across-sql-databases). The goal is to give you clear examples of how to use Dagster's [asset checks](https://docs.dagster.io/concepts/assets/asset-checks) to solve data replication problems in your data pipelines by validating the data diff between the source and target tables.
 
